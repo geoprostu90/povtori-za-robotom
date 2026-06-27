@@ -24,26 +24,28 @@
     .robot {
       font-size: 6rem; margin: 0.3rem 0;
       display: inline-block;
-      transition: transform 0.15s;
+      position: relative;  /* чтобы работали translate */
+      transition: transform 0.2s ease-out; /* плавный возврат после анимации */
     }
-    .robot.jump {
-      animation: robot-jump 0.45s ease;
+    /* Новые анимации движения */
+    .robot.move-up {
+      animation: move-up 0.45s ease;
     }
-    .robot.squash {
-      animation: robot-squash 0.45s ease;
+    .robot.move-down {
+      animation: move-down 0.45s ease;
     }
     .robot.spin {
       animation: robot-spin 0.55s ease;
     }
-    @keyframes robot-jump {
+    @keyframes move-up {
       0%   { transform: translateY(0); }
-      40%  { transform: translateY(-35px); }
+      50%  { transform: translateY(-40px); }
       100% { transform: translateY(0); }
     }
-    @keyframes robot-squash {
-      0%   { transform: scaleY(1); }
-      50%  { transform: scaleY(0.5); }
-      100% { transform: scaleY(1); }
+    @keyframes move-down {
+      0%   { transform: translateY(0); }
+      50%  { transform: translateY(40px); }
+      100% { transform: translateY(0); }
     }
     @keyframes robot-spin {
       0%   { transform: rotate(0deg); }
@@ -162,18 +164,19 @@
   const LEVELS = [3,4,5,6];
   const SUCCESS_NEEDED = 5;
 
-  // Анимация робота
+  // Анимация робота (движения вверх/вниз, вращение)
   function animateRobot(actionIndex) {
-    robotEmoji.classList.remove('jump', 'squash', 'spin');
-    void robotEmoji.offsetWidth;
+    // Убираем все анимационные классы
+    robotEmoji.classList.remove('move-up', 'move-down', 'spin');
+    void robotEmoji.offsetWidth; // рефлоу
     if (actionIndex === 0) {
-      robotEmoji.classList.add('jump');
+      robotEmoji.classList.add('move-up');
     } else if (actionIndex === 1) {
-      robotEmoji.classList.add('squash');
+      robotEmoji.classList.add('move-down');
     } else if (actionIndex === 2) {
       robotEmoji.classList.add('spin');
     }
-    setTimeout(() => robotEmoji.classList.remove('jump', 'squash', 'spin'), 600);
+    setTimeout(() => robotEmoji.classList.remove('move-up', 'move-down', 'spin'), 600);
   }
 
   // Награды
@@ -209,7 +212,6 @@
   function showSequence() {
     acceptingInput = false;
     gameDiv.classList.add('waiting');
-    // Новая фраза: акцент на движение робота
     messageEl.textContent = '🤖 Смотри, как двигается робот!';
     robotEmoji.textContent = '🤖';
     carReward.textContent = '';
@@ -295,7 +297,6 @@
       }
     } else {
       acceptingInput = false;
-      // Заменено "Ошибка" на "Внимательнее" с подсказкой
       messageEl.textContent = '❌ Внимательнее! Давай заново. Запоминай кнопки и смотри, как движется робот!';
       robotEmoji.textContent = '😢';
       carReward.textContent = '';
