@@ -21,29 +21,28 @@
     }
     h1 { font-size: 2.2rem; margin-bottom: 0.2rem; font-weight: 700; }
 
-    /* Робот с анимациями */
     .robot {
       font-size: 6rem; margin: 0.3rem 0;
-      transition: transform 0.2s;
-      display: inline-block; /* чтобы работали анимации поворота */
+      display: inline-block;
+      transition: transform 0.15s;
     }
     .robot.jump {
-      animation: robot-jump 0.3s ease;
+      animation: robot-jump 0.45s ease;
     }
     .robot.squash {
-      animation: robot-squash 0.3s ease;
+      animation: robot-squash 0.45s ease;
     }
     .robot.spin {
-      animation: robot-spin 0.4s ease;
+      animation: robot-spin 0.55s ease;
     }
     @keyframes robot-jump {
       0%   { transform: translateY(0); }
-      50%  { transform: translateY(-30px); }
+      40%  { transform: translateY(-35px); }
       100% { transform: translateY(0); }
     }
     @keyframes robot-squash {
       0%   { transform: scaleY(1); }
-      50%  { transform: scaleY(0.6); }
+      50%  { transform: scaleY(0.5); }
       100% { transform: scaleY(1); }
     }
     @keyframes robot-spin {
@@ -110,7 +109,7 @@
   <h1>Ян, помоги роботу!</h1>
   <div class="robot" id="robotEmoji">🤖</div>
   <div class="rewards" id="rewardsContainer"></div>
-  <div class="status" id="message">Готов? Смотри!</div>
+  <div class="status" id="message">Готов? Запоминай!</div>
   <div class="buttons">
     <button class="btn btn-up"   data-index="0">⬆️</button>
     <button class="btn btn-down" data-index="1">⬇️</button>
@@ -121,7 +120,7 @@
 <div class="confetti-container" id="confettiContainer"></div>
 
 <script>
-  // --- Аудио (без изменений) ---
+  // Аудио
   let audioCtx;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -145,7 +144,7 @@
   }
   function playError() { playTone(200, 0.4, 'sawtooth', 0.3); }
 
-  // --- DOM-элементы ---
+  // DOM
   const buttons = document.querySelectorAll('.btn');
   const robotEmoji = document.getElementById('robotEmoji');
   const messageEl = document.getElementById('message');
@@ -154,7 +153,7 @@
   const rewardsContainer = document.getElementById('rewardsContainer');
   const confettiContainer = document.getElementById('confettiContainer');
 
-  // --- Состояние игры ---
+  // Состояние
   let sequence = [];
   let playerIndex = 0;
   let acceptingInput = false;
@@ -163,13 +162,10 @@
   const LEVELS = [3,4,5,6];
   const SUCCESS_NEEDED = 5;
 
-  // --- Анимация робота ---
+  // Анимация робота
   function animateRobot(actionIndex) {
-    // Убираем все анимационные классы
     robotEmoji.classList.remove('jump', 'squash', 'spin');
-    // Принудительный рефлоу для перезапуска анимации
     void robotEmoji.offsetWidth;
-    // Добавляем нужный класс в зависимости от кнопки
     if (actionIndex === 0) {
       robotEmoji.classList.add('jump');
     } else if (actionIndex === 1) {
@@ -177,29 +173,23 @@
     } else if (actionIndex === 2) {
       robotEmoji.classList.add('spin');
     }
-    // Удалим класс после завершения анимации (можно не удалять, но лучше для повторных срабатываний)
-    setTimeout(() => {
-      robotEmoji.classList.remove('jump', 'squash', 'spin');
-    }, 500);
+    setTimeout(() => robotEmoji.classList.remove('jump', 'squash', 'spin'), 600);
   }
 
-  // --- Награды ---
+  // Награды
   function getRewardEmoji(level) {
     const emojis = ['⭐', '🌟', '🦄', '🎠'];
     return emojis[Math.min(level-1, emojis.length-1)];
   }
-
   function addReward(emoji) {
     const icon = document.createElement('span');
     icon.className = 'reward-icon';
     icon.textContent = emoji;
     rewardsContainer.appendChild(icon);
   }
-
   function clearRewards() {
     rewardsContainer.innerHTML = '';
   }
-
   function spawnConfetti(count = 40) {
     const emojis = ['🌟','⭐','✨','🎉','🎊'];
     for (let i=0; i<count; i++) {
@@ -215,18 +205,19 @@
     }
   }
 
-  // --- Показ последовательности ---
+  // Показ последовательности
   function showSequence() {
     acceptingInput = false;
     gameDiv.classList.add('waiting');
-    messageEl.textContent = '🤖 Смотри на кнопки!';
+    // Новая фраза: акцент на движение робота
+    messageEl.textContent = '🤖 Смотри, как двигается робот!';
     robotEmoji.textContent = '🤖';
     carReward.textContent = '';
 
     sequence.forEach((idx, step) => {
       setTimeout(() => {
         lightUpButton(idx);
-        animateRobot(idx);           // робот двигается вместе с подсветкой
+        animateRobot(idx);
         playTone([350, 450, 550][idx], 0.25);
       }, step * 1000);
     });
@@ -291,7 +282,7 @@
     const expected = sequence[playerIndex];
     if (btnIndex === expected) {
       lightUpButton(btnIndex);
-      animateRobot(btnIndex);   // робот повторяет движение за игроком
+      animateRobot(btnIndex);
       playTone([350,450,550][btnIndex], 0.1);
       playerIndex++;
       if (playerIndex === sequence.length) {
@@ -304,7 +295,8 @@
       }
     } else {
       acceptingInput = false;
-      messageEl.textContent = '❌ Ошибка! Начинаем заново';
+      // Заменено "Ошибка" на "Внимательнее" с подсказкой
+      messageEl.textContent = '❌ Внимательнее! Давай заново. Запоминай кнопки и смотри, как движется робот!';
       robotEmoji.textContent = '😢';
       carReward.textContent = '';
       document.body.classList.add('error-shake');
@@ -325,9 +317,13 @@
     robotEmoji.textContent = '🤖';
     gameDiv.classList.remove('waiting');
     acceptingInput = false;
-    messageEl.textContent = 'Готов? Смотри!';
+    messageEl.textContent = 'Готов? Запоминай!';
     generateSequence();
-    setTimeout(showSequence, 1000);
+    setTimeout(() => {
+      messageEl.textContent = 'Приготовься…';
+      playTone(440, 0.1, 'sine', 0.15);
+      setTimeout(showSequence, 1200);
+    }, 800);
   }
 
   function startGame() {
@@ -335,7 +331,11 @@
     successCount = 0;
     clearRewards();
     generateSequence();
-    showSequence();
+    messageEl.textContent = 'Приготовься…';
+    robotEmoji.textContent = '🤖';
+    setTimeout(() => {
+      showSequence();
+    }, 1500);
   }
 
   buttons.forEach(btn => {
