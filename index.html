@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0d1b4d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Помоги роботу">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Игра для детей — повтори за роботом!">
+  <title>Ян, помоги роботу!</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%230d1b4d' width='100' height='100' rx='20'/%3E%3Ctext x='50' y='62' font-size='50' text-anchor='middle'%3E🤖%3C/text%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect fill='%230d1b4d' width='180' height='180' rx='36'/%3E%3Ctext x='90' y='115' font-size='90' text-anchor='middle'%3E🤖%3C/text%3E%3C/svg%3E">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: linear-gradient(160deg, #0d1b4d 0%, #1a237e 50%, #0d1b4d 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+    }
+
+    h1 {
+      font-size: clamp(1.4rem, 6vw, 1.8rem);
+      text-align: center;
+      margin: 16px 0 8px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      line-height: 1.2;
+    }
+
+    .robot {
+      font-size: clamp(3.5rem, 18vw, 5rem);
+      line-height: 1;
+      margin: 8px 0;
+      transition: transform 0.3s ease;
+    }
+
+    .robot.thinking { animation: bounce 0.6s ease infinite alternate; }
+    .robot.happy { animation: jump 0.5s ease; }
+
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to   { transform: translateY(-12px); }
+    }
+
+    @keyframes jump {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-20px) scale(1.1); }
+    }
+
+    .status {
+      font-size: clamp(1.1rem, 5vw, 1.4rem);
+      text-align: center;
+      min-height: 2.2em;
+      margin: 8px 0 16px;
+      font-weight: 600;
+      opacity: 0.95;
+    }
+
+    .car-reward {
+      font-size: clamp(4rem, 22vw, 6rem);
+      line-height: 1;
+      opacity: 0;
+      transform: scale(0.3);
+      transition: opacity 0.3s, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      height: 0;
+    }
+
+    .car-reward.show {
+      opacity: 1;
+      transform: scale(1);
+      height: auto;
+      margin: 4px 0;
+    }
+
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(12px, 4vw, 20px);
+      width: 100%;
+      max-width: 480px;
+      flex: 1;
+      justify-content: center;
+      padding-bottom: 24px;
+    }
+
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: clamp(72px, 20vw, 96px);
+      border: none;
+      border-radius: 24px;
+      font-size: clamp(2.5rem, 12vw, 3.5rem);
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.15s, filter 0.15s;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 8px 20px rgba(0,0,0,0.25);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    .btn:disabled {
+      cursor: default;
+      opacity: 0.85;
+    }
+
+    .btn-up    { background: linear-gradient(180deg, #66bb6a, #43a047); }
+    .btn-down  { background: linear-gradient(180deg, #42a5f5, #1e88e5); }
+    .btn-spin  { background: linear-gradient(180deg, #ffa726, #fb8c00); }
+
+    .btn.highlight {
+      filter: brightness(1.4);
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255,255,255,0.6), 0 6px 0 rgba(0,0,0,0.3);
+    }
+
+    .btn.pressed {
+      filter: brightness(1.3);
+      transform: scale(0.97);
+    }
+
+    .game-area.shake {
+      animation: shake 0.5s ease;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15%      { transform: translateX(-14px); }
+      30%      { transform: translateX(14px); }
+      45%      { transform: translateX(-10px); }
+      60%      { transform: translateX(10px); }
+      75%      { transform: translateX(-6px); }
+      90%      { transform: translateX(6px); }
+    }
+
+    .start-btn {
+      margin-top: auto;
+      margin-bottom: 16px;
+      padding: 14px 32px;
+      font-size: clamp(1rem, 4.5vw, 1.2rem);
+      font-weight: 700;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(180deg, #ffeb3b, #fbc02d);
+      color: #1a237e;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #c6a700, 0 6px 16px rgba(0,0,0,0.3);
+      transition: transform 0.1s;
+    }
+
+    .start-btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #c6a700, 0 3px 8px rgba(0,0,0,0.2);
+    }
+
+    .start-btn.hidden { display: none; }
+
+    .game-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="game-area" id="gameArea">
+    <h1>Ян, помоги роботу!</h1>
+    <div class="robot" id="robot" aria-hidden="true">🤖</div>
+    <p class="status" id="status" role="status">Нажми «Играть»!</p>
+    <div class="car-reward" id="carReward" aria-hidden="true">🚗</div>
+
+    <div class="buttons" id="buttons">
+      <button class="btn btn-up"   id="btnUp"   data-action="up"   aria-label="Вверх">⬆️</button>
+      <button class="btn btn-down" id="btnDown" data-action="down" aria-label="Вниз">⬇️</button>
+      <button class="btn btn-spin" id="btnSpin" data-action="spin" aria-label="Крутиться">🔄</button>
+    </div>
+  </div>
+
+  <button class="start-btn" id="startBtn">▶ Играть</button>
+
+  <script>
+    const ACTIONS = ['up', 'down', 'spin'];
+    const SEQUENCE_LENGTH = 3;
+    const SHOW_STEP_MS = 700;
+    const PAUSE_BETWEEN_MS = 300;
+
+    const gameArea = document.getElementById('gameArea');
+    const robot = document.getElementById('robot');
+    const status = document.getElementById('status');
+    const carReward = document.getElementById('carReward');
+    const startBtn = document.getElementById('startBtn');
+    const buttons = document.querySelectorAll('.btn');
+
+    let audioCtx = null;
+    let sequence = [];
+    let playerInput = [];
+    let phase = 'idle'; // idle | showing | input | success | fail
+
+    function getAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, duration, type = 'sine', volume = 0.3) {
+      const ctx = getAudio();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(volume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    }
+
+    function playSuccessSound() {
+      const ctx = getAudio();
+      if (ctx.state === 'suspended') ctx.resume();
+      [523, 659, 784, 1047].forEach((freq, i) => {
+        setTimeout(() => playTone(freq, 0.25, 'sine', 0.25), i * 120);
+      });
+    }
+
+    function playStepSound(action) {
+      const freqs = { up: 440, down: 330, spin: 550 };
+      playTone(freqs[action], 0.15, 'triangle', 0.2);
+    }
+
+    function randomSequence() {
+      return Array.from({ length: SEQUENCE_LENGTH }, () =>
+        ACTIONS[Math.floor(Math.random() * ACTIONS.length)]
+      );
+    }
+
+    function setButtonsEnabled(enabled) {
+      buttons.forEach(b => { b.disabled = !enabled; });
+    }
+
+    function highlightButton(action) {
+      const btn = document.querySelector(`[data-action="${action}"]`);
+      if (!btn) return;
+      btn.classList.add('highlight');
+      playStepSound(action);
+      setTimeout(() => btn.classList.remove('highlight'), SHOW_STEP_MS - 50);
+    }
+
+    function flashButton(action) {
+      const btn = document.querySelector(`[data-action="${action}"]`);
+      if (!btn) return;
+      btn.classList.add('pressed');
+      playStepSound(action);
+      setTimeout(() => btn.classList.remove('pressed'), 150);
+    }
+
+    async function showSequence() {
+      phase = 'showing';
+      robot.classList.add('thinking');
+      status.textContent = 'Смотри на робота!';
+      setButtonsEnabled(false);
+      carReward.classList.remove('show');
+
+      await delay(600);
+
+      for (let i = 0; i < sequence.length; i++) {
+        highlightButton(sequence[i]);
+        await delay(SHOW_STEP_MS);
+        if (i < sequence.length - 1) await delay(PAUSE_BETWEEN_MS);
+      }
+
+      robot.classList.remove('thinking');
+      phase = 'input';
+      playerInput = [];
+      status.textContent = 'Твоя очередь!';
+      setButtonsEnabled(true);
+    }
+
+    function delay(ms) {
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    function onButtonPress(action) {
+      if (phase !== 'input') return;
+
+      getAudio().resume?.();
+      flashButton(action);
+      playerInput.push(action);
+
+      if (playerInput[playerInput.length - 1] !== sequence[playerInput.length - 1]) {
+        onFail();
+        return;
+      }
+
+      if (playerInput.length === sequence.length) {
+        onSuccess();
+      }
+    }
+
+    function onSuccess() {
+      phase = 'success';
+      setButtonsEnabled(false);
+      robot.classList.add('happy');
+      status.textContent = 'Молодец! 🎉';
+      carReward.classList.add('show');
+      playSuccessSound();
+
+      setTimeout(() => {
+        robot.classList.remove('happy');
+        sequence = randomSequence();
+        showSequence();
+      }, 2200);
+    }
+
+    function onFail() {
+      phase = 'fail';
+      setButtonsEnabled(false);
+      status.textContent = 'Попробуй ещё!';
+      gameArea.classList.add('shake');
+      robot.textContent = '😢';
+
+      setTimeout(() => {
+        gameArea.classList.remove('shake');
+        robot.textContent = '🤖';
+        playerInput = [];
+        phase = 'input';
+        status.textContent = 'Твоя очередь!';
+        setButtonsEnabled(true);
+      }, 1200);
+    }
+
+    function startGame() {
+      getAudio().resume?.();
+      startBtn.classList.add('hidden');
+      sequence = randomSequence();
+      showSequence();
+    }
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => onButtonPress(btn.dataset.action));
+    });
+
+    startBtn.addEventListener('click', startGame);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
