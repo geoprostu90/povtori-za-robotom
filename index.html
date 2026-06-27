@@ -21,24 +21,26 @@
     }
     h1 { font-size: 2.2rem; margin-bottom: 0.2rem; font-weight: 700; }
     .robot { font-size: 6rem; margin: 0.3rem 0; transition: transform 0.2s; }
-    /* Коллекция наград */
+
     .rewards {
       display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-      gap: 0.5rem; min-height: 4rem; margin: 0.5rem 0;
-      font-size: 2.5rem;
+      gap: 0.6rem; min-height: 5rem; margin: 0.5rem 0;
+      font-size: 3rem; background: rgba(255,255,255,0.05); border-radius: 20px; padding: 0.5rem;
     }
     .reward-icon {
       animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both,
                  float 2s ease-in-out infinite;
+      display: inline-block;
     }
     @keyframes pop-in {
-      0% { transform: scale(0); opacity: 0; }
-      100% { transform: scale(1); opacity: 1; }
+      0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
     }
     @keyframes float {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
+      50% { transform: translateY(-8px); }
     }
+
     .status { font-size: 2rem; font-weight: bold; margin: 0.8rem 0; color: #FFD700; min-height: 3.5rem; }
     .buttons { display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; margin: 1.5rem 0; }
     .btn {
@@ -60,7 +62,6 @@
       20%, 60% { transform: translateX(-12px); }
       40%, 80% { transform: translateX(12px); }
     }
-    /* конфетти */
     .confetti-container {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       pointer-events: none; z-index: 10;
@@ -79,7 +80,6 @@
 <div class="game" id="gameArea">
   <h1>Ян, помоги роботу!</h1>
   <div class="robot" id="robotEmoji">🤖</div>
-  <!-- Здесь будут собираться награды -->
   <div class="rewards" id="rewardsContainer"></div>
   <div class="status" id="message">Готов? Смотри!</div>
   <div class="buttons">
@@ -92,7 +92,7 @@
 <div class="confetti-container" id="confettiContainer"></div>
 
 <script>
-  // --- Аудио (без изменений) ---
+  // Аудио
   let audioCtx;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -116,7 +116,7 @@
   }
   function playError() { playTone(200, 0.4, 'sawtooth', 0.3); }
 
-  // --- DOM-элементы ---
+  // DOM
   const buttons = document.querySelectorAll('.btn');
   const robotEmoji = document.getElementById('robotEmoji');
   const messageEl = document.getElementById('message');
@@ -125,35 +125,31 @@
   const rewardsContainer = document.getElementById('rewardsContainer');
   const confettiContainer = document.getElementById('confettiContainer');
 
-  // --- Состояние игры ---
+  // Состояние
   let sequence = [];
   let playerIndex = 0;
   let acceptingInput = false;
   let currentLevel = 1;          // 1..4
   let successCount = 0;          // успешных повторений на текущем уровне
-  const LEVELS = [3,4,5,6];     // длина последовательности по уровням
+  const LEVELS = [3,4,5,6];     // длина последовательности
+  const SUCCESS_NEEDED = 5;     // сколько раз нужно правильно повторить, чтобы повысить уровень
 
-  // --- Награды-эмодзи в зависимости от уровня ---
   function getRewardEmoji(level) {
-    // Уровень 1: звезда, 2: сияющая звезда, 3: единорог, 4: карусель
     const emojis = ['⭐', '🌟', '🦄', '🎠'];
     return emojis[Math.min(level-1, emojis.length-1)];
   }
 
-  // Добавить одну награду в коллекцию
-  function addReward() {
+  function addReward(emoji) {
     const icon = document.createElement('span');
     icon.className = 'reward-icon';
-    icon.textContent = getRewardEmoji(currentLevel);
+    icon.textContent = emoji;
     rewardsContainer.appendChild(icon);
   }
 
-  // Очистить все награды
   function clearRewards() {
     rewardsContainer.innerHTML = '';
   }
 
-  // Конфетти (без изменений)
   function spawnConfetti(count = 40) {
     const emojis = ['🌟','⭐','✨','🎉','🎊'];
     for (let i=0; i<count; i++) {
@@ -169,7 +165,6 @@
     }
   }
 
-  // --- Показ последовательности ---
   function showSequence() {
     acceptingInput = false;
     gameDiv.classList.add('waiting');
@@ -209,23 +204,25 @@
     }
   }
 
-  // --- Переход к следующему раунду ---
   function nextRound() {
     successCount++;
-    addReward();  // добавляем награду за правильное повторение
+    // Добавляем награду за правильное повторение
+    addReward(getRewardEmoji(currentLevel));
 
-    if (successCount >= 3) {
-      // повышение уровня
+    if (successCount >= SUCCESS_NEEDED) {
+      // Повышение уровня
       if (currentLevel < LEVELS.length) {
         currentLevel++;
         successCount = 0;
-        clearRewards();  // на новом уровне коллекция начинается заново с новыми значками
+        clearRewards();  // новые награды нового уровня
+        // Бонусная награда за повышение
+        addReward(getRewardEmoji(currentLevel));
         messageEl.textContent = '🎉 Новый уровень!';
         robotEmoji.textContent = '🥳';
         playLevelUp();
         spawnConfetti(50);
       } else {
-        // максимальный уровень — победа
+        // Максимальный уровень — победа
         messageEl.textContent = '🏆 Ты выиграл!';
         robotEmoji.textContent = '🏆';
         playLevelUp();
@@ -235,14 +232,12 @@
       }
     } else {
       messageEl.textContent = `✅ Правильно!`;
-      // можно дописать подсказку, сколько осталось до уровня
     }
 
     generateSequence();
     setTimeout(showSequence, 1200);
   }
 
-  // --- Обработка нажатия игрока ---
   function handlePlayerInput(btnIndex) {
     if (!acceptingInput) return;
     const expected = sequence[playerIndex];
@@ -259,7 +254,6 @@
         setTimeout(nextRound, 1500);
       }
     } else {
-      // ошибка
       acceptingInput = false;
       messageEl.textContent = '❌ Ошибка! Начинаем заново';
       robotEmoji.textContent = '😢';
@@ -295,7 +289,6 @@
     showSequence();
   }
 
-  // --- Привязка событий ---
   buttons.forEach(btn => {
     const handler = () => {
       initAudio();
