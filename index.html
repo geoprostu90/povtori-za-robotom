@@ -2,62 +2,71 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Повтори за роботом</title>
   <link rel="manifest" href="manifest.json">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: linear-gradient(135deg, #0a0f24, #1a1f3a);
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      font-family: system-ui, sans-serif;
+      min-height: 100vh; min-height: -webkit-fill-available;
+      display: flex; align-items: center; justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+      touch-action: manipulation; /* убирает задержку на мобильных */
     }
     .game {
       text-align: center; color: white;
-      max-width: 480px; padding: 2rem;
+      width: 100%; max-width: 480px; padding: 1.5rem;
     }
-    h1 { font-size: 2rem; margin-bottom: 1.5rem; }
-    .robot { font-size: 4rem; margin-bottom: 1rem; transition: transform 0.2s; }
+    h1 { font-size: 2.2rem; margin-bottom: 0.3rem; font-weight: 700; }
+    .robot { font-size: 6rem; margin: 0.5rem 0; transition: transform 0.2s; }
+    .status {
+      font-size: 2rem; font-weight: bold; margin: 0.8rem 0;
+      color: #FFD700; min-height: 3.5rem;
+    }
     .buttons {
-      display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;
+      display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap;
+      margin: 1.5rem 0;
     }
     .btn {
-      width: 90px; height: 90px; border: none; border-radius: 20px;
-      font-size: 2.5rem; background: #2e3b4e; color: white;
-      box-shadow: 0 6px 0 #151a24; cursor: pointer;
-      transition: 0.1s linear;
+      width: 100px; height: 100px; border: none; border-radius: 25px;
+      font-size: 3rem; background: #2e3b4e; color: white;
+      box-shadow: 0 8px 0 #151a24; cursor: pointer;
+      transition: all 0.08s ease;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
     }
-    .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #151a24; }
-    .btn.green  { background: #27ae60; box-shadow: 0 6px 0 #1e8449; }
-    .btn.blue   { background: #2980b9; box-shadow: 0 6px 0 #1c5980; }
-    .btn.orange { background: #e67e22; box-shadow: 0 6px 0 #b85c10; }
-    .btn.lit    { filter: brightness(1.6); transform: scale(1.05); }
-    .message { font-size: 1.5rem; margin: 1.5rem 0 0.5rem; min-height: 2.5rem; }
-    .score { font-size: 1.2rem; color: #aaa; margin-bottom: 0.5rem; }
+    .btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #151a24; }
+    .btn-up    { background: #27ae60; box-shadow: 0 8px 0 #1e8449; }
+    .btn-down  { background: #2980b9; box-shadow: 0 8px 0 #1c5980; }
+    .btn-spin  { background: #e67e22; box-shadow: 0 8px 0 #b85c10; }
+    .btn.lit   { filter: brightness(1.9); transform: scale(1.08); }
+    .game.waiting .btn { pointer-events: none; } /* блокировка во время показа */
+    .car-reward { font-size: 3rem; margin-top: 1rem; min-height: 4rem; }
     .error-shake { animation: shake 0.3s ease-in-out; }
     @keyframes shake {
       0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-10px); }
-      40%, 80% { transform: translateX(10px); }
+      20%, 60% { transform: translateX(-12px); }
+      40%, 80% { transform: translateX(12px); }
     }
   </style>
 </head>
 <body>
-<div class="game">
-  <div class="robot" id="robotEmoji">🤖</div>
+<div class="game" id="gameArea">
   <h1>Ян, помоги роботу!</h1>
-  <div class="score" id="scoreDisplay">Раунд: 1</div>
-  <div class="buttons" id="buttonsContainer">
-    <button class="btn green"  data-index="0">⬆️</button>
-    <button class="btn blue"   data-index="1">⬇️</button>
-    <button class="btn orange" data-index="2">🔄</button>
+  <div class="robot" id="robotEmoji">🤖</div>
+  <div class="status" id="message" role="status">Готов? Смотри!</div>
+
+  <div class="buttons">
+    <button class="btn btn-up"   data-index="0">⬆️</button>
+    <button class="btn btn-down" data-index="1">⬇️</button>
+    <button class="btn btn-spin" data-index="2">🔄</button>
   </div>
-  <div class="message" id="message"></div>
+  <div class="car-reward" id="carReward"></div>
 </div>
 
 <script>
-  // --- Web Audio ---
+  // --- Аудио ---
   let audioCtx;
   function initAudio() {
     if (!audioCtx) {
@@ -72,7 +81,7 @@
     const gain = audioCtx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
     osc.connect(gain);
     gain.connect(audioCtx.destination);
@@ -80,124 +89,143 @@
     osc.stop(audioCtx.currentTime + duration);
   }
 
-  function playSuccess() { // мелодия победы
-    [523.25, 659.25, 783.99].forEach((f, i) => {
-      setTimeout(() => playTone(f, 0.15, 'triangle'), i * 120);
+  function playSuccess() {
+    const notes = [523.25, 659.25, 783.99];
+    notes.forEach((f, i) => {
+      setTimeout(() => playTone(f, 0.18, 'triangle'), i * 130);
     });
   }
 
-  function playError() { playTone(200, 0.3, 'sawtooth'); }
+  function playError() {
+    playTone(200, 0.4, 'sawtooth');
+  }
 
-  // --- Игра ---
+  // --- Состояние игры ---
   const buttons = document.querySelectorAll('.btn');
   const robotEmoji = document.getElementById('robotEmoji');
   const messageEl = document.getElementById('message');
-  const scoreEl = document.getElementById('scoreDisplay');
+  const carReward = document.getElementById('carReward');
+  const gameDiv = document.getElementById('gameArea');
 
-  let sequence = [];          // текущая последовательность
-  let playerIndex = 0;       // какой шаг ждём от игрока
-  let round = 1;             // номер раунда
-  let acceptingInput = false;// можно ли нажимать кнопки сейчас
+  let sequence = [];        // последовательность индексов
+  let playerIndex = 0;     // текущий ожидаемый шаг игрока
+  let round = 1;           // счётчик раундов
+  let acceptingInput = false; // можно ли нажимать кнопки
 
-  // --- Показать последовательность ---
+  // --- Показать последовательность (робот показывает) ---
   function showSequence() {
-    acceptingInput = false;  // блокируем ввод на время показа
-    messageEl.textContent = 'Смотри!';
-    sequence.forEach((btnIndex, i) => {
+    acceptingInput = false;
+    gameDiv.classList.add('waiting');   // блокируем касания
+    messageEl.textContent = '🤖 Смотри на кнопки!';
+    robotEmoji.textContent = '🤖';
+    carReward.textContent = '';
+
+    sequence.forEach((idx, step) => {
       setTimeout(() => {
-        lightUpButton(btnIndex);
-        playTone([400, 500, 600][btnIndex], 0.2, 'square');
-      }, i * 800); // интервал между подсветками
+        lightUpButton(idx);
+        playTone([350, 450, 550][idx], 0.3);
+      }, step * 1000); // 1 секунда между шагами — ребёнок успевает
     });
-    // После показа последней кнопки включаем ввод
-    const totalTime = sequence.length * 800 + 300;
+
+    // После последней подсветки включаем ввод
+    const totalTime = sequence.length * 1000 + 600;
     setTimeout(() => {
       acceptingInput = true;
-      messageEl.textContent = 'Повтори!';
+      gameDiv.classList.remove('waiting');
+      messageEl.textContent = '👉 Твоя очередь!';
+      robotEmoji.textContent = '😊';
       playerIndex = 0;
     }, totalTime);
   }
 
-  // Подсветить кнопку на короткое время
   function lightUpButton(index) {
     const btn = document.querySelector(`.btn[data-index="${index}"]`);
+    if (!btn) return;
     btn.classList.add('lit');
-    setTimeout(() => btn.classList.remove('lit'), 400);
+    setTimeout(() => btn.classList.remove('lit'), 500);
   }
 
-  // --- Следующий раунд ---
+  // --- Переход к следующему раунду ---
   function nextRound() {
-    const moves = [0, 1, 2];
-    const newStep = moves[Math.floor(Math.random() * moves.length)];
-    sequence.push(newStep);  // добавляем случайный шаг
-    scoreEl.textContent = `Раунд: ${round}`;
+    // Добавляем один случайный шаг к последовательности
+    sequence.push(Math.floor(Math.random() * 3));
+    messageEl.textContent = `⭐ Раунд ${round}`;
     round++;
     showSequence();
   }
 
   // --- Обработка нажатия игрока ---
   function handlePlayerInput(btnIndex) {
-    if (!acceptingInput) return; // ещё идёт показ
+    if (!acceptingInput) return; // идёт показ – не реагируем
+
     const expected = sequence[playerIndex];
+
     if (btnIndex === expected) {
-      // верный шаг
+      // Правильное нажатие
       lightUpButton(btnIndex);
-      playTone([400, 500, 600][btnIndex], 0.1);
+      playTone([350, 450, 550][btnIndex], 0.12);
       playerIndex++;
+
       if (playerIndex === sequence.length) {
-        // вся последовательность пройдена
+        // Последовательность пройдена полностью
         acceptingInput = false;
-        messageEl.textContent = 'Правильно! 🚗';
+        messageEl.textContent = '🎉 Молодец!';
         robotEmoji.textContent = '😊';
+        carReward.textContent = '🚗'; // машинка в награду
         playSuccess();
-        setTimeout(nextRound, 1200);
+
+        // Запускаем следующий раунд через паузу
+        setTimeout(() => {
+          nextRound();
+        }, 1500);
       }
     } else {
-      // ошибка
+      // Ошибка
       acceptingInput = false;
-      messageEl.textContent = 'Ошибка 😢 попробуй снова';
+      messageEl.textContent = '❌ Ошибка! Давай ещё раз';
       robotEmoji.textContent = '😢';
+      carReward.textContent = '';
       document.body.classList.add('error-shake');
       playError();
-      if (navigator.vibrate) navigator.vibrate(200); // вибро (Android)
-      setTimeout(() => document.body.classList.remove('error-shake'), 300);
-      // сброс игры
-      resetGame();
+      if (navigator.vibrate) navigator.vibrate(200);
+
+      setTimeout(() => {
+        document.body.classList.remove('error-shake');
+        resetGame();
+      }, 1500);
     }
   }
 
-  // Сброс и старт заново
+  // --- Сброс игры к первому раунду ---
   function resetGame() {
     sequence = [];
     round = 1;
     playerIndex = 0;
-    scoreEl.textContent = 'Раунд: 1';
+    carReward.textContent = '';
     robotEmoji.textContent = '🤖';
-    setTimeout(() => {
-      messageEl.textContent = '';
-      startGame();
-    }, 1500);
+    gameDiv.classList.remove('waiting');
+    acceptingInput = false;
+    messageEl.textContent = 'Готов? Смотри!';
+    setTimeout(() => startGame(), 1000);
   }
 
-  // Запуск игры
   function startGame() {
-    // Первый раз показываем последовательность из 3 шагов
+    // Генерируем первые 3 шага
     for (let i = 0; i < 3; i++) {
-      const r = Math.floor(Math.random() * 3);
-      sequence.push(r);
+      sequence.push(Math.floor(Math.random() * 3));
     }
-    round = 1;  // будет 1
+    round = 1;
     showSequence();
   }
 
-  // Навешиваем обработчики на кнопки
+  // --- Привязка событий кнопок ---
   buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      initAudio(); // активируем аудио после первого касания (iOS)
-      const index = parseInt(btn.dataset.index, 10);
-      handlePlayerInput(index);
-    });
-    // Для мобильных: предотвращаем двойное срабатывание
+    const handler = () => {
+      initAudio(); // Аудиоконтекст после касания (iOS)
+      handlePlayerInput(parseInt(btn.dataset.index, 10));
+    };
+    btn.addEventListener('click', handler);
+    // Убираем задержку на тач-устройствах
     btn.addEventListener('touchstart', (e) => {
       e.preventDefault();
       btn.click();
@@ -207,7 +235,7 @@
   // Старт при загрузке
   window.addEventListener('load', () => {
     initAudio();
-    resetGame(); // она вызовет startGame после небольшой паузы
+    resetGame(); // начнёт показ через 1 секунду
   });
 </script>
 </body>
