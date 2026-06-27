@@ -9,309 +9,280 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       background: linear-gradient(135deg, #0a0f24, #1a1f3a);
-      min-height: 100vh; min-height: -webkit-fill-available;
-      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
       font-family: system-ui, -apple-system, sans-serif;
       touch-action: manipulation;
-      overflow-x: hidden;
     }
     .game {
       text-align: center; color: white;
       width: 100%; max-width: 480px; padding: 1rem;
     }
-    h1 { font-size: 2.2rem; margin-bottom: 0.2rem; font-weight: 700; }
-
-    .robot {
-      font-size: 6rem; margin: 0.3rem 0;
-      display: inline-block;
-      position: relative;           /* для transform */
-      transition: transform 0.2s ease-out; /* плавный возврат */
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .status { font-size: 1.8rem; font-weight: bold; color: #FFD700; min-height: 3rem; margin: 0.5rem 0; }
+    .grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem;
+      width: 280px; height: 280px; margin: 1rem auto;
+      background: rgba(255,255,255,0.1); border-radius: 16px; padding: 0.5rem;
     }
-    /* Анимации движения */
-    .robot.move-up {
-      animation: move-up 0.6s ease;
+    .cell {
+      background: rgba(255,255,255,0.15); border-radius: 12px;
+      position: relative;
+      transition: background 0.2s;
     }
-    .robot.move-down {
-      animation: move-down 0.6s ease;
+    .cell.path {
+      background: rgba(255, 215, 0, 0.3);
     }
-    .robot.spin {
-      animation: robot-spin 0.7s ease;
+    .robot-emoji {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      font-size: 2.5rem; transition: top 0.4s ease, left 0.4s ease;
+      pointer-events: none;
     }
-    @keyframes move-up {
-      0%   { transform: translateY(0); }
-      50%  { transform: translateY(-60px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes move-down {
-      0%   { transform: translateY(0); }
-      50%  { transform: translateY(60px); }
-      100% { transform: translateY(0); }
-    }
-    @keyframes robot-spin {
-      0%   { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
     .rewards {
-      display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
-      gap: 0.6rem; min-height: 5rem; margin: 0.5rem 0;
-      font-size: 3rem; background: rgba(255,255,255,0.05); border-radius: 20px; padding: 0.5rem;
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.4rem;
+      font-size: 2rem; min-height: 3rem; margin: 0.5rem 0;
     }
     .reward-icon {
-      animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both,
-                 float 2s ease-in-out infinite;
-      display: inline-block;
+      animation: pop-in 0.3s ease both, float 2s infinite;
     }
-    @keyframes pop-in {
-      0% { transform: scale(0) rotate(-20deg); opacity: 0; }
-      100% { transform: scale(1) rotate(0deg); opacity: 1; }
-    }
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
-    }
-
-    .status { font-size: 2rem; font-weight: bold; margin: 0.8rem 0; color: #FFD700; min-height: 3.5rem; }
-    .buttons { display: flex; justify-content: center; gap: 1.2rem; flex-wrap: wrap; margin: 1.5rem 0; }
+    @keyframes pop-in { 0%{transform:scale(0);opacity:0} 100%{transform:scale(1);opacity:1} }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+    .buttons { display: flex; justify-content: center; gap: 1rem; margin-top: 1rem; flex-wrap: wrap; }
     .btn {
-      width: 100px; height: 100px; border: none; border-radius: 25px;
-      font-size: 3rem; background: #2e3b4e; color: white;
-      box-shadow: 0 8px 0 #151a24; cursor: pointer;
-      transition: all 0.08s ease; -webkit-tap-highlight-color: transparent; user-select: none;
+      width: 65px; height: 65px; border: none; border-radius: 15px;
+      font-size: 2.2rem; background: #2e3b4e; color: white;
+      box-shadow: 0 6px 0 #151a24; cursor: pointer; transition: all 0.08s;
+      -webkit-tap-highlight-color: transparent; user-select: none;
     }
-    .btn:active { transform: translateY(4px); box-shadow: 0 4px 0 #151a24; }
-    .btn-up    { background: #27ae60; box-shadow: 0 8px 0 #1e8449; }
-    .btn-down  { background: #2980b9; box-shadow: 0 8px 0 #1c5980; }
-    .btn-spin  { background: #e67e22; box-shadow: 0 8px 0 #b85c10; }
-    .btn.lit   { filter: brightness(1.9); transform: scale(1.08); }
+    .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 #151a24; }
+    .btn.lit { filter: brightness(1.8); transform: scale(1.05); }
     .game.waiting .btn { pointer-events: none; }
-    .car-reward { font-size: 3rem; margin-top: 1rem; min-height: 4rem; }
-    .error-shake { animation: shake 0.3s ease-in-out; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-12px); }
-      40%, 80% { transform: translateX(12px); }
-    }
-    .confetti-container {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; z-index: 10;
-    }
-    .confetti {
-      position: absolute; font-size: 2rem;
-      animation: confetti-fall 1.5s ease-out forwards;
-    }
-    @keyframes confetti-fall {
-      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-    }
+    .error-shake { animation: shake 0.3s; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
   </style>
 </head>
 <body>
 <div class="game" id="gameArea">
   <h1>Ян, помоги роботу!</h1>
-  <div class="robot" id="robotEmoji">🤖</div>
-  <div class="rewards" id="rewardsContainer"></div>
   <div class="status" id="message">Готов? Запоминай!</div>
-  <div class="buttons">
-    <button class="btn btn-up"   data-index="0">⬆️</button>
-    <button class="btn btn-down" data-index="1">⬇️</button>
-    <button class="btn btn-spin" data-index="2">🔄</button>
+  <div class="grid" id="grid">
+    <!-- 16 клеток, робот вставляется динамически -->
   </div>
-  <div class="car-reward" id="carReward"></div>
+  <div class="rewards" id="rewardsContainer"></div>
+  <div class="buttons" id="buttonsContainer">
+    <button class="btn" data-dir="up">⬆️</button>
+    <button class="btn" data-dir="down">⬇️</button>
+    <button class="btn" data-dir="left">⬅️</button>
+    <button class="btn" data-dir="right">➡️</button>
+  </div>
 </div>
-<div class="confetti-container" id="confettiContainer"></div>
 
 <script>
-  // Аудио
+  // Audio
   let audioCtx;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
   }
-  function playTone(freq, duration, type='sine', vol=0.25) {
+  function playTone(f,d,t='sine',v=0.25) {
     if (!audioCtx) return;
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = type; osc.frequency.value = freq;
-    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + duration);
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type=t; o.frequency.value=f;
+    g.gain.setValueAtTime(v,audioCtx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+d);
+    o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+d);
   }
-  function playSuccess() {
-    [523.25, 659.25, 783.99].forEach((f,i)=> setTimeout(()=>playTone(f,0.18,'triangle'), i*130));
-  }
-  function playLevelUp() {
-    [523.25, 659.25, 783.99, 1046.5].forEach((f,i)=> setTimeout(()=>playTone(f,0.2,'triangle',0.3), i*100));
-  }
-  function playError() { playTone(200, 0.4, 'sawtooth', 0.3); }
+  function playSuccess(){ [523,659,784].forEach((f,i)=>setTimeout(()=>playTone(f,0.15,'triangle'),i*100)); }
+  function playLevelUp(){ [523,659,784,1047].forEach((f,i)=>setTimeout(()=>playTone(f,0.2,'triangle',0.3),i*80)); }
+  function playError(){ playTone(200,0.5,'sawtooth',0.3); }
 
-  // DOM
-  const buttons = document.querySelectorAll('.btn');
-  const robotEmoji = document.getElementById('robotEmoji');
-  const messageEl = document.getElementById('message');
-  const carReward = document.getElementById('carReward');
-  const gameDiv = document.getElementById('gameArea');
-  const rewardsContainer = document.getElementById('rewardsContainer');
-  const confettiContainer = document.getElementById('confettiContainer');
+  // Grid & robot
+  const grid = document.getElementById('grid');
+  const robotEmoji = document.createElement('div');
+  robotEmoji.className = 'robot-emoji';
+  robotEmoji.textContent = '🤖';
+  grid.appendChild(robotEmoji);
 
-  // Состояние
-  let sequence = [];
-  let playerIndex = 0;
+  const COLS = 4, ROWS = 4;
+  let robotPos = { x: 1, y: 1 }; // старт в центре 4x4
+
+  function updateRobotPosition() {
+    const cellSize = grid.clientWidth / COLS;
+    const left = robotPos.x * cellSize + cellSize/2;
+    const top = robotPos.y * cellSize + cellSize/2;
+    robotEmoji.style.left = left + 'px';
+    robotEmoji.style.top = top + 'px';
+  }
+
+  // Отрисовка сетки (клетки статичны)
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.dataset.x = c;
+      cell.dataset.y = r;
+      grid.appendChild(cell);
+    }
+  }
+
+  // Подсветка клетки пути
+  function highlightCell(x,y, on) {
+    const cell = grid.querySelector(`.cell[data-x="${x}"][data-y="${y}"]`);
+    if (cell) cell.classList.toggle('path', on);
+  }
+
+  // Очистить весь путь
+  function clearPath() {
+    grid.querySelectorAll('.cell.path').forEach(c => c.classList.remove('path'));
+  }
+
+  // Проверка границ
+  function canMove(dir) {
+    let nx=robotPos.x, ny=robotPos.y;
+    if (dir==='up') ny--;
+    else if (dir==='down') ny++;
+    else if (dir==='left') nx--;
+    else if (dir==='right') nx++;
+    return nx>=0 && nx<COLS && ny>=0 && ny<ROWS;
+  }
+
+  // Перемещение робота с анимацией
+  function moveRobot(dir) {
+    return new Promise(resolve => {
+      if (!canMove(dir)) { resolve(false); return; }
+      let nx=robotPos.x, ny=robotPos.y;
+      if (dir==='up') ny--;
+      else if (dir==='down') ny++;
+      else if (dir==='left') nx--;
+      else if (dir==='right') nx++;
+      // Подсветим старую клетку как путь
+      highlightCell(robotPos.x, robotPos.y, true);
+      robotPos.x = nx; robotPos.y = ny;
+      updateRobotPosition();
+      playTone(dir==='up'?400:dir==='down'?300:dir==='left'?350:450, 0.1);
+      setTimeout(resolve, 400); // ждём завершения анимации transition
+    });
+  }
+
+  // Состояние игры
+  let sequence = [];          // массив направлений
+  let playerStep = 0;
   let acceptingInput = false;
   let currentLevel = 1;
   let successCount = 0;
-  const LEVELS = [3,4,5,6];
+  const LEVELS = [3,4,5,6];  // длина последовательности
   const SUCCESS_NEEDED = 5;
-
-  // Анимация робота
-  function animateRobot(actionIndex) {
-    // Удаляем все классы движения, чтобы можно было перезапустить анимацию
-    robotEmoji.classList.remove('move-up', 'move-down', 'spin');
-    // Принудительный рефлоу, чтобы браузер «увидел» удаление классов
-    void robotEmoji.offsetWidth;
-    if (actionIndex === 0) {
-      robotEmoji.classList.add('move-up');
-    } else if (actionIndex === 1) {
-      robotEmoji.classList.add('move-down');
-    } else if (actionIndex === 2) {
-      robotEmoji.classList.add('spin');
-    }
-    // Удалим класс после завершения анимации
-    setTimeout(() => {
-      robotEmoji.classList.remove('move-up', 'move-down', 'spin');
-    }, 700);
-  }
 
   // Награды
   function getRewardEmoji(level) {
-    const emojis = ['⭐', '🌟', '🦄', '🎠'];
-    return emojis[Math.min(level-1, emojis.length-1)];
+    return ['⭐','🌟','🦄','🎠'][Math.min(level-1,3)];
   }
-  function addReward(emoji) {
-    const icon = document.createElement('span');
-    icon.className = 'reward-icon';
-    icon.textContent = emoji;
-    rewardsContainer.appendChild(icon);
+  function addReward() {
+    const span = document.createElement('span');
+    span.className = 'reward-icon';
+    span.textContent = getRewardEmoji(currentLevel);
+    document.getElementById('rewardsContainer').appendChild(span);
   }
   function clearRewards() {
-    rewardsContainer.innerHTML = '';
-  }
-  function spawnConfetti(count = 40) {
-    const emojis = ['🌟','⭐','✨','🎉','🎊'];
-    for (let i=0; i<count; i++) {
-      const span = document.createElement('span');
-      span.className = 'confetti';
-      span.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-      span.style.left = Math.random()*100 + '%';
-      span.style.top = -(Math.random()*20 + 10) + 'px';
-      span.style.animationDuration = (Math.random()*1 + 1.5) + 's';
-      span.style.fontSize = (Math.random()*2 + 1.5) + 'rem';
-      confettiContainer.appendChild(span);
-      setTimeout(() => span.remove(), 2000);
-    }
+    document.getElementById('rewardsContainer').innerHTML = '';
   }
 
-  // Показ последовательности
-  function showSequence() {
-    acceptingInput = false;
+  // Показ последовательности (робот ползёт)
+  async function showSequence() {
+    const gameDiv = document.getElementById('gameArea');
     gameDiv.classList.add('waiting');
-    messageEl.textContent = '🤖 Смотри, как двигается робот!';
-    robotEmoji.textContent = '🤖';
-    carReward.textContent = '';
+    document.getElementById('message').textContent = '🤖 Смотри, куда ползёт!';
+    clearPath();
+    // Ставим робота в центр
+    robotPos = { x:1, y:1 };
+    updateRobotPosition();
+    highlightCell(1,1,true);
+    await new Promise(r => setTimeout(r, 600));
 
-    sequence.forEach((idx, step) => {
-      setTimeout(() => {
-        lightUpButton(idx);
-        animateRobot(idx);
-        playTone([350, 450, 550][idx], 0.3);
-      }, step * 1000);
-    });
-
-    const totalTime = sequence.length * 1000 + 600;
-    setTimeout(() => {
-      acceptingInput = true;
-      gameDiv.classList.remove('waiting');
-      messageEl.textContent = '👉 Твоя очередь!';
-      robotEmoji.textContent = '😊';
-      playerIndex = 0;
-    }, totalTime);
+    for (const dir of sequence) {
+      await moveRobot(dir);
+      await new Promise(r => setTimeout(r, 200)); // пауза между шагами
+    }
+    // После показа ждём и включаем ввод
+    await new Promise(r => setTimeout(r, 600));
+    document.getElementById('message').textContent = '👉 Твоя очередь!';
+    gameDiv.classList.remove('waiting');
+    acceptingInput = true;
+    playerStep = 0;
+    // Возвращаем робота в стартовую позицию для игрока
+    robotPos = { x:1, y:1 };
+    updateRobotPosition();
+    clearPath();
+    highlightCell(1,1,true);
   }
 
-  function lightUpButton(index) {
-    const btn = document.querySelector(`.btn[data-index="${index}"]`);
-    if (!btn) return;
-    btn.classList.add('lit');
-    setTimeout(() => btn.classList.remove('lit'), 500);
-  }
-
+  // Генерация последовательности
   function generateSequence() {
-    const length = LEVELS[currentLevel-1];
+    const dirs = ['up','down','left','right'];
+    const len = LEVELS[currentLevel-1];
     sequence = [];
-    for (let i=0; i<length; i++) {
-      sequence.push(Math.floor(Math.random()*3));
+    // Генерируем с учётом границ, чтобы робот не выходил за поле
+    let x=1, y=1;
+    for (let i=0; i<len; i++) {
+      const possible = dirs.filter(d => {
+        let nx=x, ny=y;
+        if (d==='up') ny--; else if (d==='down') ny++; else if (d==='left') nx--; else if (d==='right') nx++;
+        return nx>=0 && nx<COLS && ny>=0 && ny<ROWS;
+      });
+      const dir = possible[Math.floor(Math.random()*possible.length)];
+      sequence.push(dir);
+      if (dir==='up') y--; else if (dir==='down') y++; else if (dir==='left') x--; else if (dir==='right') x++;
     }
   }
 
-  function nextRound() {
-    successCount++;
-    addReward(getRewardEmoji(currentLevel));
-
-    if (successCount >= SUCCESS_NEEDED) {
-      if (currentLevel < LEVELS.length) {
-        currentLevel++;
-        successCount = 0;
-        clearRewards();
-        addReward(getRewardEmoji(currentLevel));
-        messageEl.textContent = '🎉 Новый уровень!';
-        robotEmoji.textContent = '🥳';
-        playLevelUp();
-        spawnConfetti(50);
-      } else {
-        messageEl.textContent = '🏆 Ты выиграл!';
-        robotEmoji.textContent = '🏆';
-        playLevelUp();
-        spawnConfetti(80);
-        setTimeout(resetToLevel1, 3000);
-        return;
-      }
-    } else {
-      messageEl.textContent = `✅ Правильно!`;
-    }
-
-    generateSequence();
-    // Перед показом следующей последовательности даём паузу 2.5 сек
-    setTimeout(showSequence, 2500);
-  }
-
-  function handlePlayerInput(btnIndex) {
+  // Обработка нажатия игрока
+  async function handleInput(dir) {
     if (!acceptingInput) return;
-    const expected = sequence[playerIndex];
-    if (btnIndex === expected) {
-      lightUpButton(btnIndex);
-      animateRobot(btnIndex);
-      playTone([350,450,550][btnIndex], 0.1);
-      playerIndex++;
-      if (playerIndex === sequence.length) {
-        acceptingInput = false;
-        messageEl.textContent = '🎉 Молодец! 🚗';
-        robotEmoji.textContent = '😊';
-        carReward.textContent = '🚗';
-        playSuccess();
-        setTimeout(nextRound, 1500);
-      }
-    } else {
+    const expected = sequence[playerStep];
+    if (dir !== expected) {
       acceptingInput = false;
-      // Слово "Ошибка" полностью исключено
-      messageEl.textContent = '❌ Внимательнее! Давай заново. Запоминай кнопки и смотри, как движется робот!';
-      robotEmoji.textContent = '😢';
-      carReward.textContent = '';
+      document.getElementById('message').textContent = '❌ Внимательнее! Давай заново.';
       document.body.classList.add('error-shake');
       playError();
       if (navigator.vibrate) navigator.vibrate(200);
       setTimeout(() => {
         document.body.classList.remove('error-shake');
         resetToLevel1();
+      }, 1500);
+      return;
+    }
+    // Правильный шаг
+    await moveRobot(dir);
+    playerStep++;
+    if (playerStep === sequence.length) {
+      // Последовательность пройдена
+      acceptingInput = false;
+      document.getElementById('message').textContent = '🎉 Молодец! 🚗';
+      playSuccess();
+      addReward();
+      successCount++;
+      if (successCount >= SUCCESS_NEEDED) {
+        if (currentLevel < LEVELS.length) {
+          currentLevel++;
+          successCount = 0;
+          clearRewards();
+          addReward();
+          document.getElementById('message').textContent = '🎉 Новый уровень!';
+          playLevelUp();
+        } else {
+          document.getElementById('message').textContent = '🏆 Ты выиграл!';
+          playLevelUp();
+          setTimeout(resetToLevel1, 3000);
+          return;
+        }
+      }
+      // Подготовка к следующему раунду
+      setTimeout(() => {
+        clearPath();
+        robotPos = { x:1, y:1 };
+        updateRobotPosition();
+        highlightCell(1,1,true);
+        generateSequence();
+        setTimeout(showSequence, 1500);
       }, 1500);
     }
   }
@@ -320,18 +291,13 @@
     currentLevel = 1;
     successCount = 0;
     clearRewards();
-    carReward.textContent = '';
-    robotEmoji.textContent = '🤖';
-    gameDiv.classList.remove('waiting');
-    acceptingInput = false;
-    messageEl.textContent = 'Готов? Запоминай!';
+    document.getElementById('message').textContent = 'Готов? Запоминай!';
+    clearPath();
+    robotPos = { x:1, y:1 };
+    updateRobotPosition();
+    highlightCell(1,1,true);
     generateSequence();
-    // Увеличенная пауза перед показом после ошибки
-    setTimeout(() => {
-      messageEl.textContent = 'Приготовься…';
-      playTone(440, 0.1, 'sine', 0.15);
-      setTimeout(showSequence, 1500); // ещё 1.5 сек после "Приготовься"
-    }, 1000);
+    setTimeout(showSequence, 2000);
   }
 
   function startGame() {
@@ -339,28 +305,19 @@
     successCount = 0;
     clearRewards();
     generateSequence();
-    messageEl.textContent = 'Приготовься…';
-    robotEmoji.textContent = '🤖';
-    // Первая пауза 2.5 секунды
-    setTimeout(() => {
-      showSequence();
-    }, 2500);
+    setTimeout(showSequence, 1500);
   }
 
-  buttons.forEach(btn => {
-    const handler = () => {
-      initAudio();
-      handlePlayerInput(parseInt(btn.dataset.index, 10));
-    };
-    btn.addEventListener('click', handler);
-    btn.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      btn.click();
-    });
+  // Кнопки
+  document.querySelectorAll('.btn').forEach(btn => {
+    const dir = btn.dataset.dir;
+    btn.addEventListener('click', () => { initAudio(); handleInput(dir); });
+    btn.addEventListener('touchstart', e => { e.preventDefault(); btn.click(); });
   });
 
   window.addEventListener('load', () => {
     initAudio();
+    updateRobotPosition();
     startGame();
   });
 </script>
