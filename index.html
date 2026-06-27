@@ -20,7 +20,36 @@
       width: 100%; max-width: 480px; padding: 1rem;
     }
     h1 { font-size: 2.2rem; margin-bottom: 0.2rem; font-weight: 700; }
-    .robot { font-size: 6rem; margin: 0.3rem 0; transition: transform 0.2s; }
+
+    /* Робот с анимациями */
+    .robot {
+      font-size: 6rem; margin: 0.3rem 0;
+      transition: transform 0.2s;
+      display: inline-block; /* чтобы работали анимации поворота */
+    }
+    .robot.jump {
+      animation: robot-jump 0.3s ease;
+    }
+    .robot.squash {
+      animation: robot-squash 0.3s ease;
+    }
+    .robot.spin {
+      animation: robot-spin 0.4s ease;
+    }
+    @keyframes robot-jump {
+      0%   { transform: translateY(0); }
+      50%  { transform: translateY(-30px); }
+      100% { transform: translateY(0); }
+    }
+    @keyframes robot-squash {
+      0%   { transform: scaleY(1); }
+      50%  { transform: scaleY(0.6); }
+      100% { transform: scaleY(1); }
+    }
+    @keyframes robot-spin {
+      0%   { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
 
     .rewards {
       display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
@@ -92,7 +121,7 @@
 <div class="confetti-container" id="confettiContainer"></div>
 
 <script>
-  // Аудио
+  // --- Аудио (без изменений) ---
   let audioCtx;
   function initAudio() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -116,7 +145,7 @@
   }
   function playError() { playTone(200, 0.4, 'sawtooth', 0.3); }
 
-  // DOM
+  // --- DOM-элементы ---
   const buttons = document.querySelectorAll('.btn');
   const robotEmoji = document.getElementById('robotEmoji');
   const messageEl = document.getElementById('message');
@@ -125,15 +154,36 @@
   const rewardsContainer = document.getElementById('rewardsContainer');
   const confettiContainer = document.getElementById('confettiContainer');
 
-  // Состояние
+  // --- Состояние игры ---
   let sequence = [];
   let playerIndex = 0;
   let acceptingInput = false;
-  let currentLevel = 1;          // 1..4
-  let successCount = 0;          // успешных повторений на текущем уровне
-  const LEVELS = [3,4,5,6];     // длина последовательности
-  const SUCCESS_NEEDED = 5;     // сколько раз нужно правильно повторить, чтобы повысить уровень
+  let currentLevel = 1;
+  let successCount = 0;
+  const LEVELS = [3,4,5,6];
+  const SUCCESS_NEEDED = 5;
 
+  // --- Анимация робота ---
+  function animateRobot(actionIndex) {
+    // Убираем все анимационные классы
+    robotEmoji.classList.remove('jump', 'squash', 'spin');
+    // Принудительный рефлоу для перезапуска анимации
+    void robotEmoji.offsetWidth;
+    // Добавляем нужный класс в зависимости от кнопки
+    if (actionIndex === 0) {
+      robotEmoji.classList.add('jump');
+    } else if (actionIndex === 1) {
+      robotEmoji.classList.add('squash');
+    } else if (actionIndex === 2) {
+      robotEmoji.classList.add('spin');
+    }
+    // Удалим класс после завершения анимации (можно не удалять, но лучше для повторных срабатываний)
+    setTimeout(() => {
+      robotEmoji.classList.remove('jump', 'squash', 'spin');
+    }, 500);
+  }
+
+  // --- Награды ---
   function getRewardEmoji(level) {
     const emojis = ['⭐', '🌟', '🦄', '🎠'];
     return emojis[Math.min(level-1, emojis.length-1)];
@@ -165,6 +215,7 @@
     }
   }
 
+  // --- Показ последовательности ---
   function showSequence() {
     acceptingInput = false;
     gameDiv.classList.add('waiting');
@@ -175,6 +226,7 @@
     sequence.forEach((idx, step) => {
       setTimeout(() => {
         lightUpButton(idx);
+        animateRobot(idx);           // робот двигается вместе с подсветкой
         playTone([350, 450, 550][idx], 0.25);
       }, step * 1000);
     });
@@ -206,23 +258,19 @@
 
   function nextRound() {
     successCount++;
-    // Добавляем награду за правильное повторение
     addReward(getRewardEmoji(currentLevel));
 
     if (successCount >= SUCCESS_NEEDED) {
-      // Повышение уровня
       if (currentLevel < LEVELS.length) {
         currentLevel++;
         successCount = 0;
-        clearRewards();  // новые награды нового уровня
-        // Бонусная награда за повышение
+        clearRewards();
         addReward(getRewardEmoji(currentLevel));
         messageEl.textContent = '🎉 Новый уровень!';
         robotEmoji.textContent = '🥳';
         playLevelUp();
         spawnConfetti(50);
       } else {
-        // Максимальный уровень — победа
         messageEl.textContent = '🏆 Ты выиграл!';
         robotEmoji.textContent = '🏆';
         playLevelUp();
@@ -243,6 +291,7 @@
     const expected = sequence[playerIndex];
     if (btnIndex === expected) {
       lightUpButton(btnIndex);
+      animateRobot(btnIndex);   // робот повторяет движение за игроком
       playTone([350,450,550][btnIndex], 0.1);
       playerIndex++;
       if (playerIndex === sequence.length) {
