@@ -24,27 +24,27 @@
     .robot {
       font-size: 6rem; margin: 0.3rem 0;
       display: inline-block;
-      position: relative;  /* чтобы работали translate */
-      transition: transform 0.2s ease-out; /* плавный возврат после анимации */
+      position: relative;           /* для transform */
+      transition: transform 0.2s ease-out; /* плавный возврат */
     }
-    /* Новые анимации движения */
+    /* Анимации движения */
     .robot.move-up {
-      animation: move-up 0.45s ease;
+      animation: move-up 0.6s ease;
     }
     .robot.move-down {
-      animation: move-down 0.45s ease;
+      animation: move-down 0.6s ease;
     }
     .robot.spin {
-      animation: robot-spin 0.55s ease;
+      animation: robot-spin 0.7s ease;
     }
     @keyframes move-up {
       0%   { transform: translateY(0); }
-      50%  { transform: translateY(-40px); }
+      50%  { transform: translateY(-60px); }
       100% { transform: translateY(0); }
     }
     @keyframes move-down {
       0%   { transform: translateY(0); }
-      50%  { transform: translateY(40px); }
+      50%  { transform: translateY(60px); }
       100% { transform: translateY(0); }
     }
     @keyframes robot-spin {
@@ -164,11 +164,12 @@
   const LEVELS = [3,4,5,6];
   const SUCCESS_NEEDED = 5;
 
-  // Анимация робота (движения вверх/вниз, вращение)
+  // Анимация робота
   function animateRobot(actionIndex) {
-    // Убираем все анимационные классы
+    // Удаляем все классы движения, чтобы можно было перезапустить анимацию
     robotEmoji.classList.remove('move-up', 'move-down', 'spin');
-    void robotEmoji.offsetWidth; // рефлоу
+    // Принудительный рефлоу, чтобы браузер «увидел» удаление классов
+    void robotEmoji.offsetWidth;
     if (actionIndex === 0) {
       robotEmoji.classList.add('move-up');
     } else if (actionIndex === 1) {
@@ -176,7 +177,10 @@
     } else if (actionIndex === 2) {
       robotEmoji.classList.add('spin');
     }
-    setTimeout(() => robotEmoji.classList.remove('move-up', 'move-down', 'spin'), 600);
+    // Удалим класс после завершения анимации
+    setTimeout(() => {
+      robotEmoji.classList.remove('move-up', 'move-down', 'spin');
+    }, 700);
   }
 
   // Награды
@@ -220,7 +224,7 @@
       setTimeout(() => {
         lightUpButton(idx);
         animateRobot(idx);
-        playTone([350, 450, 550][idx], 0.25);
+        playTone([350, 450, 550][idx], 0.3);
       }, step * 1000);
     });
 
@@ -276,7 +280,8 @@
     }
 
     generateSequence();
-    setTimeout(showSequence, 1200);
+    // Перед показом следующей последовательности даём паузу 2.5 сек
+    setTimeout(showSequence, 2500);
   }
 
   function handlePlayerInput(btnIndex) {
@@ -297,6 +302,7 @@
       }
     } else {
       acceptingInput = false;
+      // Слово "Ошибка" полностью исключено
       messageEl.textContent = '❌ Внимательнее! Давай заново. Запоминай кнопки и смотри, как движется робот!';
       robotEmoji.textContent = '😢';
       carReward.textContent = '';
@@ -320,11 +326,12 @@
     acceptingInput = false;
     messageEl.textContent = 'Готов? Запоминай!';
     generateSequence();
+    // Увеличенная пауза перед показом после ошибки
     setTimeout(() => {
       messageEl.textContent = 'Приготовься…';
       playTone(440, 0.1, 'sine', 0.15);
-      setTimeout(showSequence, 1200);
-    }, 800);
+      setTimeout(showSequence, 1500); // ещё 1.5 сек после "Приготовься"
+    }, 1000);
   }
 
   function startGame() {
@@ -334,9 +341,10 @@
     generateSequence();
     messageEl.textContent = 'Приготовься…';
     robotEmoji.textContent = '🤖';
+    // Первая пауза 2.5 секунды
     setTimeout(() => {
       showSequence();
-    }, 1500);
+    }, 2500);
   }
 
   buttons.forEach(btn => {
